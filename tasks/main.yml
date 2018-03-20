@@ -1,0 +1,105 @@
+
+- name: Install additional packages for galaxy
+  action: >
+    {{ ansible_pkg_mgr }} name={{ item }} state=present update_cache=yes
+  with_items:
+    - "{% if ansible_os_family=='Debian' %}{{ galaxy_system_packages.debian }}{% elif ansible_os_family=='Redhat' %}{{ galaxy_system_packages.redhat }}{% endif %}"
+  tags: galaxy
+
+- name: Creating user galaxy
+  user:
+    name: galaxy
+    home: "{{ galaxy_home }}"
+    shell: "/bin/sh"
+    createhome: yes
+    state: present
+    group: galaxy
+    uid: "{{galaxy_user.uid|default(omit)}}"
+    gid: "{{galaxy_user.gid|default(omit)}}"
+  tags: galaxy
+
+- name: Download and Untar Galaxy from github
+  unarchive:
+    src: "{{ galaxy_archive_url }}"
+    dest: "{{ galaxy_home }}"
+    creates: "{{ galaxy_home }}/galaxy-{{ galaxy_version }}"
+    remote_src: yes
+    owner: galaxy
+    group: galaxy
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Create symlink home to version
+  file:
+     src: "{{ galaxy_home }}/galaxy-{{ galaxy_version }}"
+     dest: "{{ galaxy_home }}/galaxy"
+     state: link
+     owner: galaxy
+     group: galaxy
+     mode: 0755
+     force: yes
+  tags: galaxy
+
+- name: Galaxy directory & permissions
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: galaxy
+    group: galaxy
+  with_items:
+#    - "{{ galaxy_home }}/.config/pip"
+    - "{{ galaxy_log_dir }}"
+    - "{{ galaxy_home }}/galaxy/.tmp"
+    - "/var/run/galaxy"
+  tags: galaxy
+
+- name: Update startup pypi index
+  lineinfile:
+    path: "{{ galaxy_home }}/galaxy/scripts/common_startup.sh"
+    regexp: 'PYPI_INDEX_URL:'
+    line: ': ${PYPI_INDEX_URL:="{{ galaxy_venv.index_url }}"}'
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Galaxy Virtualenv Setup
+  pip:
+    virtualenv: "{{ galaxy_home }}/galaxy/{{ galaxy_venv_dir }}"
+    requirements: "{{ galaxy_home }}/galaxy/requirements.txt"
+    extra_args: --index-url {{ galaxy_venv.index_url }} --extra-index-url {{ galaxy_venv.extra_index_url }}
+    virtualenv_site_packages: yes
+#    name: psycopg2
+  register: galaxy_venv_updated
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Galaxy Virtualenv
+  file:
+    path: "{{ galaxy_home }}/galaxy/{{ galaxy_venv_dir }}"
+    state: directory
+    owner: galaxy
+    group: galaxy
+    recurse: true
+  when: galaxy_venv_updated.changed 
+  tags: galaxy
+
+- import_tasks: config.yml
+
+- name: Galaxy systemd daemon config
+  template:
+    src: systemd-galaxy.j2
+    dest: "/etc/systemd/system/galaxy.service"
+    owner: galaxy
+  notify: daemon-reload galaxy
+  tags: galaxy
+- meta: flush_handlers
+
+- name: Galaxy systemd daemon enable
+  systemd:
+    name: galaxy
+    enabled: yes
+    state: started
+  tags: galaxy
+
+- import_tasks: tool_installer.yml
+  when: galaxy_tool_installer_run == True
+

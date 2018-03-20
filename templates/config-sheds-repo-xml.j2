@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<!-- Ansible Managed -->
+
+<tool_sheds>
+ {% for key, value in galaxy_toolsheds.iteritems() -%}
+  <tool_shed name="{{ key }}" url="{{ value }}"/>
+ {% endfor %}
+</tool_sheds>

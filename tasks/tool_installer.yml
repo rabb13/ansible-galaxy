@@ -1,0 +1,44 @@
+- name: galaxy_tool source yaml
+  get_url:
+    url: "{{ galaxy_tool_installer.yaml_source }}"
+    dest: "{{ galaxy_home }}/galaxy/.tmp/install_tool_list.yaml"
+    owner: galaxy
+    group: galaxy
+  register: tool_list_update
+  tags: galaxy, galaxy_tool_installer
+
+- name: galaxy_install ephemeris/shedtool
+  pip:
+    virtualenv: "{{ galaxy_home }}/galaxy/.venv-ephemeris"
+    name:
+      - ephemeris==0.8.0
+      - bioblend==0.10.0
+    extra_args: --index-url {{ galaxy_venv.index_url }} --extra-index-url {{ galaxy_venv.extra_index_url }}
+  when: tool_list_update.changed or galaxy_tool_installer.force_run  == True
+  tags: galaxy, galaxy_tool_installer
+
+- name: galaxy_add bootstrap user script
+  copy:
+    src: "manage_bootstrap_user.py"
+    dest: "{{ galaxy_home }}/galaxy/.tmp/manage_bootstrap_user.py"
+    mode: 0755
+  when: tool_list_update.changed or galaxy_tool_installer.force_run  == True
+  tags: galaxy, galaxy_tool_installer
+
+- name: galaxy_add bootstrap user
+  shell: sleep 120 && ./.venv-ephemeris/bin/python .tmp/manage_bootstrap_user.py -c config/galaxy_ini create -u "{{ galaxy_tool_installer.user_name }}" -e "{{ galaxy_tool_installer.user_email }}" -p "{{ galaxy_tool_installer.user_password }}" -a "{{ galaxy_tool_installer.api_key }}" > "{{ galaxy_log_dir }}/toolinstaller.log"
+  args:
+    chdir: "{{ galaxy_home }}/galaxy"
+  become: yes
+  become_user: galaxy
+  when: tool_list_update.changed or galaxy_tool_installer.force_run  == True
+  tags: galaxy galaxy_tool_installer
+
+- name: galaxy_install tools from yaml list
+  shell: ./.venv-ephemeris/bin/shed-tools install -t .tmp/install_tool_list.yaml -a "{{ galaxy_tool_installer.api_key }}" -g  "{{ galaxy_tool_installer.galaxy_instance }}" >> "{{ galaxy_log_dir }}/toolinstaller.log"
+  args:
+    chdir: "{{ galaxy_home }}/galaxy"
+  become: yes
+  become_user: galaxy
+  when: tool_list_update.changed or galaxy_tool_installer.force_run  == True
+  tags: galaxy, galaxy_tool_installer

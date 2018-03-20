@@ -1,0 +1,19 @@
+galaxy_info:
+
+  author:              Rabbi
+  company:             Rabbi
+  description:         Galaxy (galaxyproject.org} extended configuration management tool
+  license:             MIT
+  min_ansible_version: 2.4
+  platforms:
+    - name: Debian
+      versions:
+        - xenial
+    - name: EL
+      versions:
+        - 7 
+  galaxy_tags:
+    - ansible-galaxy
+    - galaxyproject
+    - ansible-galaxy-project
+  license: MIT

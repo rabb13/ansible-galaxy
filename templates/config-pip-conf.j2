@@ -1,0 +1,5 @@
+# Ansible Managed
+[global]
+{% for key, value in galaxy_pip.iteritems() -%}
+{{ key }} = {{ value }}
+{% endfor -%}

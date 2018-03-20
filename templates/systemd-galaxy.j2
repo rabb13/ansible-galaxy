@@ -1,0 +1,32 @@
+# Ansible managed
+
+[Unit]
+Description=Galaxy Service
+{% if galaxy_config_app.database_connection is defined -%}
+After=network.target postgresql.service
+{% else -%}
+After=network.target
+{% endif %}
+
+[Service]
+Type=forking
+User=galaxy
+Group=galaxy
+EnvironmentFile=/etc/environment
+WorkingDirectory={{ galaxy_home }}/galaxy
+{% if galaxy_source_profile is defined -%}
+ExecStartPre=source {{ galaxy_source_profile }}
+{% endif -%}
+{% if galaxy_version < 18.00 -%}
+ExecStartPre=-{{ galaxy_home }}/galaxy/run.sh --version
+ExecStart=/bin/bash -c 'source {{ galaxy_home }}/galaxy/{{ galaxy_venv_dir }}/bin/activate; {{ galaxy_home }}/galaxy/{{ galaxy_venv_dir }}/bin/python {{ galaxy_home }}/galaxy/scripts/paster.py serve "{{ galaxy_home }}/galaxy/config/galaxy.ini" --pid-file="/var/run/galaxy/galaxy.pid" --log-file="{{ galaxy_log_dir }}/galaxy.log" --daemon'
+ExecStop={{ galaxy_home }}/galaxy/{{ galaxy_venv_dir }}/bin/python ./scripts/paster.py serve "config/galaxy.ini" --pid-file="/var/run/galaxy/galaxy.pid" --log-file="{{ galaxy_log_dir }}/galaxy.log" --stop-daemon
+{% elif galaxy_version >= 18.01  %}
+ExecStart={{ galaxy_home }}/galaxy/run.sh --daemon --daemonize2 {{ galaxy_log_dir }}/galaxy.log --pidfile2 /var/run/galaxy/galaxy.pid
+ExecStop={{ galaxy_home }}/galaxy/run.sh --stop-daemon
+{% endif %}
+PIDFile=/var/run/galaxy/galaxy.pid
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target

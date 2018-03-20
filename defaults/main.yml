@@ -1,0 +1,107 @@
+## --------- galaxy defaults -------------##
+
+# Install Depnedent packages
+galaxy_system_packages:
+  debian:
+    - build-essential
+    - zlibc
+    - r-base
+    - r-base-dev
+    - pkg-config
+    - python-dev
+    - virtualenv
+    - libpcre3-dev
+  redhat:
+    - gcc
+    - make
+    - zlib
+    - zlib-devel
+    - glib
+    - glib-devel
+    - R
+    - python-devel
+    - virtualenv
+
+# Galaxy server configs
+galaxy_home: /srv/galaxyproject
+galaxy_version: 18.01
+galaxy_archive_url: "https://github.com/galaxyproject/galaxy/archive/v{{ galaxy_version }}.tar.gz"
+galaxy_log_dir: "/var/log/galaxy"
+galaxy_user: #user attributes
+
+#----------- For version 18.01 or later   ---------#
+galaxy_config_uwsgi:
+    http: "0.0.0.0:8080"
+    processes: 1
+    threads: 4
+    offload-threads: 2
+    master: true
+    virtualenv: ".venv"
+    module: galaxy.webapps.galaxy.buildapp:uwsgi_app()
+    die-on-term: true
+    py-call-osafterfork: true
+    enable-threads: true
+#----------- For version 17.09 or earlier ---------#
+galaxy_config_server:
+    host: 0.0.0.0
+    port: 8080
+    use: "egg:Paste#http"
+#--------------------------------------------------#
+galaxy_config_app:
+    admin_users: "toolinstaller@localhost.lan, admin@localhost.lan"
+    auth_config_file: config/auth_conf.xml
+    use_interactive: True
+
+# Galaxy Authentication sources # make sure galaxy_config_app.auth_config_file is configured
+galaxy_auth:
+  localdb:
+    enabled: True
+    allow_password_change: True
+  ldap:
+    enabled: False
+
+# venv python and wheel repo
+galaxy_venv_dir: "{{ galaxy_config_uwsgi.virtualenv | default('.venv') }}"
+galaxy_venv:
+  index_url: "https://pypi.python.org/simple"
+  extra_index_url: "https://wheels.galaxyproject.org/simple" # do not useit under pip when using proxy
+
+#galaxy_pip_conf:
+#      timeout: 60
+#      index-url: "https://pypi.python.org/simple"
+#      find-links: "https://wheels.galaxyproject.org/simple"
+
+# locally installed tools filter
+galaxy_localtools:
+
+# This lists the Tools Sheds available to galaxy and installls them
+galaxy_toolsheds:
+  Galaxy Main Tool Shed: "https://toolshed.g2.bx.psu.edu/"
+
+# if customise_localtools = True, it will filter Locally instaled tools in interface (it does not add new)
+galaxy_customise_localtools: False
+
+# Jobs configuration, set enable: to True to activate
+galaxy_jobs:
+  enable: false
+  handlers_default: handlers
+  destinations_default: local
+  resources_default: default
+  resources:
+    deafult : "" # required
+    memoryonly: memory
+    all: "processors,memory,time,project"
+
+
+
+# Install tools as part of galaxy installtation
+galaxy_tool_installer_run: False
+galaxy_tool_installer:
+  force_run: False
+  api_key: "{{ ansible_machine_id }}"
+  galaxy_instance: "http://127.0.0.1:8080"
+  yaml_source: "https://raw.githubusercontent.com/rabb13/galaxy-instructions/master/galaxy__tool_list.yaml"
+  # yaml_source_hash: "md5=c75f7170316927776ca5f58e26e6ef9f" # it can be URL or string ( if undefined verification will be skipped)
+  user_name: "tool-installer"
+  user_password: "{{ ansible_machine_id }}"
+  user_email: "toolinstaller@localhost.lan" # Must be present in galaxy.config.app

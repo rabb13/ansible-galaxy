@@ -1,0 +1,13 @@
+---
+- name: daemon-reload galaxy
+#  command: systemctl daemon-reload
+  service:
+    daemon_reload: yes
+#  notify: restart galaxy
+
+- name: restart galaxy
+  service:
+    name: "galaxy"
+    state: restarted
+#    enabled: yes
+

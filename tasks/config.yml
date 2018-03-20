@@ -1,0 +1,77 @@
+- name: Galaxy app config "< v17.09"
+  template:
+    src: galaxy_ini.j2
+    dest: "{{ galaxy_home }}/galaxy/config/galaxy.ini"
+    owner: galaxy
+    group: galaxy
+  when: galaxy_version < 18.01
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Galaxy app config ">= 18.01"
+  template:
+    src: galaxy_yml.j2
+    dest: "{{ galaxy_home }}/galaxy/config/galaxy.yml"
+    owner: galaxy
+    group: galaxy
+  when: galaxy_version >= 18.01
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Galaxy authentication config
+  template:
+    src: config-auth-xml.j2
+    dest: "{{ galaxy_home }}/galaxy/{{ galaxy_config_app.auth_config_file | default('config/auth_conf.xml') }}"
+    owner: galaxy
+    group: galaxy
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Galaxy tool sheds repo config
+  template:
+    src: config-sheds-repo-xml.j2
+    dest: "{{ galaxy_home }}/galaxy/config/tool_sheds_conf.xml"
+    owner: galaxy
+    group: galaxy
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Galaxy local tools config
+  template:
+    dest: "{{ galaxy_home }}/galaxy/config/tool_conf.xml"
+    src: config-tool-local-xml.j2
+    owner: galaxy
+    group: galaxy
+  when: galaxy_customise_localtools == True
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Galaxy tool liftOver fix
+  file:
+    path: "{{ galaxy_home }}/galaxy/tool-data/liftOver.loc"
+    state: touch
+    owner: galaxy
+    group: galaxy
+  changed_when: false
+  when: galaxy_localtools.liftOver is defined
+  tags: galaxy, run1
+
+- name: Galaxy jobs config
+  template:
+    dest: "{{ galaxy_home }}/galaxy/config/job_conf.xml"
+    src: config-jobs-advanced-xml.j2
+    owner: galaxy
+    group: galaxy
+  when: galaxy_jobs is defined and galaxy_jobs.enable == True
+  notify: restart galaxy
+  tags: galaxy
+
+- name: Galaxy homepage-html
+  template:
+    path: "{{ galaxy_home }}/galaxy/static/welcome.html"
+    src: "{{ galaxy_home_page_source }}"
+    owner: galaxy
+    group: galaxy
+  when: galaxy_home_page_source is defined
+  tags: galaxy
+

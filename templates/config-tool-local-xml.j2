@@ -1,0 +1,70 @@
+{%- set local_tools = galaxy_localtools -%}
+<?xml version='1.0' encoding='utf-8'?>
+
+<!-- Ansible Managed -->
+
+<toolbox monitor="true">
+  {%- if galaxy_localtools.getext is defined %}
+    <section id="getext" name="Get Data">
+      {% for value in local_tools.getext.tools -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+  {%- if galaxy_localtools.liftOver is defined %}
+    <section id="liftOver" name="Lift-Over">
+      {% for value in local_tools.liftOver.tools  -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+  {%- if galaxy_localtools.collection_operations is defined %}
+    <section id="collection_operations" name="Collection Operations">
+      {% for value in local_tools.collection_operations.tools  -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+  {%- if galaxy_localtools.textutil is defined %}
+    <section id="textutil" name="Collection Operations">
+      {% for value in local_tools.textutil.tools -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+  {%- if galaxy_localtools.filter is defined %}
+    <section id="filter" name="Filter and Sort">
+      {% for value in local_tools.filter.tools -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+  {%- if galaxy_localtools.convert is defined %}
+    <section id="convert" name="Convert Formats">
+      {% for value in local_tools.convert.tools -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+  {%- if galaxy_localtools.plots is defined %}
+    <section id="plots" name="Graph/Display Data">
+      {% for value in local_tools.plots.tools -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+  {%- if galaxy_localtools.stats is defined %}
+    <section id="stats" name="Statistics">
+      {% for value in local_tools.stats.tools -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+  {%- if galaxy_localtools.cshl_library_information is defined %}
+    <section id="cshl_library_information" name="GS: QC and manipulation">
+      {% for value in local_tools.cshl_library_information.tools -%}
+      {{ value }}
+      {% endfor %}
+    </section>
+  {% endif -%}
+</toolbox>
